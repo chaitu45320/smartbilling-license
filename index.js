@@ -14,8 +14,8 @@ const rateLimit  = require('express-rate-limit');
 const path       = require('path');
 const db         = require('./models/db');
 
-// Railway sets PORT automatically — never hardcode it
-const PORT = process.env.PORT || 3000;
+// Railway uses port 8080 by default
+const PORT = process.env.PORT || 8080;
 const app  = express();
 
 // ── Security Headers ────────────────────────────────────────────
