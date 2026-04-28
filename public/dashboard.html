@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Smart Billing — License Admin</title>
+<style>
+:root{--bg:#0a0f1e;--surface:#0f172a;--elevated:#1e293b;--border:#1e293b;--borderl:#334155;--text:#f1f5f9;--text2:#94a3b8;--muted:#475569;--accent:#3b82f6;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;--purple:#a855f7}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+
+/* Layout */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-brand{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:700}
+.topbar-brand span{font-size:11px;color:var(--muted);font-weight:400}
+.main{max-width:1400px;margin:0 auto;padding:24px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:24px}
+.tab{padding:10px 18px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab:hover{color:var(--text2)}
+.panel{display:none}.panel.active{display:block}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
+@media(max-width:900px){.stats{grid-template-columns:1fr 1fr}}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px}
+.stat-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.stat-value{font-size:28px;font-weight:800}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:18px}
+.card h3{font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text)}
+
+/* Forms */
+.form-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+input,select,textarea{background:var(--elevated);border:1.5px solid var(--borderl);color:var(--text);padding:9px 12px;border-radius:8px;font-size:13px;outline:none;font-family:inherit}
+input:focus,select:focus{border-color:var(--accent)}
+input[type=text],input[type=email],input[type=number],select{min-width:180px}
+label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:4px;letter-spacing:.05em}
+.form-group{display:flex;flex-direction:column;gap:0}
+
+/* Buttons */
+.btn{padding:9px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:700;transition:opacity .15s;white-space:nowrap}
+.btn:hover{opacity:.88}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-success{background:var(--ok);color:#fff}
+.btn-danger{background:var(--err);color:#fff}
+.btn-warn{background:var(--warn);color:#fff}
+.btn-sm{padding:5px 10px;font-size:11px;border-radius:6px}
+.btn-secondary{background:var(--elevated);color:var(--text2);border:1px solid var(--borderl)}
+
+/* Key output */
+.key-display{background:var(--elevated);border:1.5px solid var(--ok);border-radius:8px;padding:14px 16px;font-family:monospace;font-size:16px;font-weight:700;color:var(--ok);letter-spacing:.08em;word-break:break-all;margin-top:12px;display:none}
+
+/* Alert */
+.alert{padding:10px 14px;border-radius:8px;font-size:13px;margin-top:10px;display:none}
+.alert.ok{background:rgba(34,197,94,.1);border:1px solid var(--ok);color:var(--ok);display:block}
+.alert.err{background:rgba(239,68,68,.1);border:1px solid var(--err);color:var(--err);display:block}
+.alert.warn{background:rgba(245,158,11,.1);border:1px solid var(--warn);color:var(--warn);display:block}
+
+/* Table */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{padding:9px 10px;font-size:10px;font-weight:700;text-align:left;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;background:var(--elevated);border-bottom:1px solid var(--border)}
+td{padding:10px;font-size:12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:hover td{background:rgba(59,130,246,.04)}
+.mono{font-family:monospace;font-size:11px}
+
+/* Badges */
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;white-space:nowrap}
+.badge-full{background:rgba(34,197,94,.15);color:var(--ok)}
+.badge-trial{background:rgba(245,158,11,.15);color:var(--warn)}
+.badge-expired{background:rgba(239,68,68,.15);color:var(--err)}
+.badge-revoked{background:rgba(100,116,139,.15);color:var(--muted)}
+
+/* Search */
+.search-bar{margin-bottom:14px;display:flex;gap:8px}
+.search-bar input{flex:1;max-width:340px}
+
+/* Actions column */
+.actions{display:flex;gap:4px;flex-wrap:wrap}
+
+/* Log table */
+.result-ok{color:var(--ok)}
+.result-fail{color:var(--err)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    🔑 Smart Billing License Admin
+    <span>Cloud Sprint | contact@cloudsprint.in</span>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <span id="serverStatus" style="font-size:12px;color:var(--muted)">Checking...</span>
+    <button class="btn btn-secondary btn-sm" onclick="exportData()">⬇ Export</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Stats -->
+  <div class="stats" id="statsBar">
+    <div class="stat"><div class="stat-label">Total Keys</div><div class="stat-value" id="s-total" style="color:var(--accent)">—</div></div>
+    <div class="stat"><div class="stat-label">Full Licenses</div><div class="stat-value" id="s-full" style="color:var(--ok)">—</div></div>
+    <div class="stat"><div class="stat-label">Trial Licenses</div><div class="stat-value" id="s-trial" style="color:var(--warn)">—</div></div>
+    <div class="stat"><div class="stat-label">Active Devices</div><div class="stat-value" id="s-devices" style="color:var(--accent)">—</div></div>
+    <div class="stat"><div class="stat-label">Today Activations</div><div class="stat-value" id="s-today" style="color:var(--ok)">—</div></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('keys')">📋 All Licenses</div>
+    <div class="tab" onclick="showTab('generate')">⚡ Generate Key</div>
+    <div class="tab" onclick="showTab('verify')">🔍 Verify & Manage</div>
+    <div class="tab" onclick="showTab('suspicious')">⚠️ Suspicious</div>
+    <div class="tab" onclick="showTab('logs')">📜 Activity Logs</div>
+  </div>
+
+  <!-- TAB: All Licenses -->
+  <div id="tab-keys" class="panel active">
+    <div class="card">
+      <h3>📋 All License Keys</h3>
+      <div class="search-bar">
+        <input type="search" id="keySearch" placeholder="Search by key, email, type..." oninput="filterKeys()"/>
+        <select id="keyFilter" onchange="filterKeys()">
+          <option value="">All Types</option>
+          <option value="full">Full</option>
+          <option value="trial">Trial</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" onclick="loadKeys()">↻ Refresh</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>License Key</th><th>Email</th><th>Type</th><th>Devices</th>
+            <th>Status</th><th>Issued</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="keysBody"><tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Generate -->
+  <div id="tab-generate" class="panel">
+    <div class="card">
+      <h3>⚡ Generate New License Key</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Customer Email *</label>
+          <input type="email" id="genEmail" placeholder="customer@example.com" style="min-width:240px"/>
+        </div>
+        <div class="form-group">
+          <label>License Type</label>
+          <select id="genType">
+            <option value="full">Full License (Never Expires)</option>
+            <option value="trial">Trial License (10 Days)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Max Devices</label>
+          <input type="number" id="genDevices" value="1" min="1" max="10" style="min-width:90px;max-width:90px"/>
+        </div>
+        <div class="form-group">
+          <label>Notes (optional)</label>
+          <input type="text" id="genNotes" placeholder="e.g. Business name" style="min-width:200px"/>
+        </div>
+        <div class="form-group"><label>&nbsp;</label>
+          <button class="btn btn-success" onclick="generateKey()">⚡ Generate Key</button>
+        </div>
+      </div>
+      <div id="genKeyOut" class="key-display"></div>
+      <div id="genAlert" class="alert"></div>
+    </div>
+
+    <div class="card">
+      <h3>📧 Send Key to Customer</h3>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Copy the generated key and share via WhatsApp or email.</p>
+      <div class="form-row">
+        <input type="text" id="copyKey" placeholder="Paste key here..." style="flex:1;font-family:monospace"/>
+        <button class="btn btn-primary" onclick="copyToClipboard()">📋 Copy</button>
+        <button class="btn btn-success" onclick="openWhatsApp()">💬 WhatsApp</button>
+      </div>
+      <div id="copyAlert" class="alert"></div>
+    </div>
+  </div>
+
+  <!-- TAB: Verify & Manage -->
+  <div id="tab-verify" class="panel">
+    <div class="card">
+      <h3>🔍 Verify / Lookup Key</h3>
+      <div class="form-row">
+        <input type="text" id="verifyKey" placeholder="SMBILL-FULL-XXXXXX-XXXXXX-XXXXXX" style="flex:1;font-family:monospace"/>
+        <button class="btn btn-primary" onclick="verifyKey()">Verify</button>
+      </div>
+      <div id="verifyResult" style="margin-top:14px"></div>
+    </div>
+
+    <div class="card">
+      <h3>🔄 Transfer License to New Device</h3>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Use when customer gets a new phone. Frees up device slot.</p>
+      <div class="form-row">
+        <input type="text" id="transferKey" placeholder="SMBILL-FULL-XXXXXX-XXXXXX-XXXXXX" style="flex:1;font-family:monospace"/>
+        <button class="btn btn-warn" onclick="transferAll()">🔄 Free All Devices</button>
+      </div>
+      <div id="transferAlert" class="alert"></div>
+    </div>
+
+    <div class="card">
+      <h3>🚫 Revoke License</h3>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Immediately blocks all devices using this key.</p>
+      <div class="form-row">
+        <input type="text" id="revokeKey" placeholder="SMBILL-FULL-XXXXXX-XXXXXX-XXXXXX" style="flex:1;font-family:monospace"/>
+        <button class="btn btn-danger" onclick="revokeKey()">🚫 Revoke</button>
+        <button class="btn btn-success" onclick="restoreKey()">✅ Restore</button>
+      </div>
+      <div id="revokeAlert" class="alert"></div>
+    </div>
+  </div>
+
+  <!-- TAB: Suspicious -->
+  <div id="tab-suspicious" class="panel">
+    <div class="card">
+      <h3>⚠️ Suspicious Activity — Keys with 3+ Failed Activations</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Key</th><th>Email</th><th>Type</th><th>Failed Attempts</th><th>IPs Seen</th><th>Last Attempt</th><th>Actions</th></tr></thead>
+          <tbody id="suspiciousBody"><tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Logs -->
+  <div id="tab-logs" class="panel">
+    <div class="card">
+      <h3>📜 Activity Log</h3>
+      <div class="search-bar">
+        <select id="logFilter" onchange="loadLogs()">
+          <option value="">All Actions</option>
+          <option value="activate">Activations</option>
+          <option value="validate">Validations</option>
+          <option value="deactivate">Deactivations</option>
+          <option value="reactivate">Re-activations</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" onclick="loadLogs()">↻ Refresh</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Time</th><th>Action</th><th>Result</th><th>Key</th><th>Device</th><th>IP</th><th>Detail</th></tr></thead>
+          <tbody id="logsBody"><tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Config ─────────────────────────────────────────────────────
+const TOKEN = new URLSearchParams(window.location.search).get('token') || '';
+let allKeys = [];
+
+function api(method, path, body) {
+  return fetch('/admin' + path, {
+    method,
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN },
+    body: body ? JSON.stringify(body) : undefined
+  }).then(r => r.json());
+}
+
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const tabs = ['keys','generate','verify','suspicious','logs'];
+  const idx  = tabs.indexOf(name);
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'keys')       loadKeys();
+  if (name === 'suspicious') loadSuspicious();
+  if (name === 'logs')       loadLogs();
+}
+
+function showAlert(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.className = 'alert ' + type;
+  setTimeout(() => { el.textContent = ''; el.className = 'alert'; }, 6000);
+}
+
+function ts(t) {
+  return t ? new Date(t).toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+}
+
+function typeBadge(type, daysLeft, isActive) {
+  if (!isActive)           return '<span class="badge badge-revoked">REVOKED</span>';
+  if (type === 'full')     return '<span class="badge badge-full">FULL</span>';
+  if (daysLeft <= 0)       return '<span class="badge badge-expired">EXPIRED</span>';
+  return `<span class="badge badge-trial">TRIAL ${daysLeft}d</span>`;
+}
+
+// ── Dashboard ──────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const d = await api('GET', '/dashboard');
+    if (!d.success) return;
+    document.getElementById('s-total').textContent   = d.stats.totalKeys;
+    document.getElementById('s-full').textContent    = d.stats.fullKeys;
+    document.getElementById('s-trial').textContent   = d.stats.trialKeys;
+    document.getElementById('s-devices').textContent = d.stats.totalDevices;
+    document.getElementById('s-today').textContent   = d.todayActivations;
+    document.getElementById('serverStatus').textContent = '🟢 Online';
+    document.getElementById('serverStatus').style.color = '#22c55e';
+  } catch(e) {
+    document.getElementById('serverStatus').textContent = '🔴 Offline';
+    document.getElementById('serverStatus').style.color = '#ef4444';
+  }
+}
+
+// ── Keys ───────────────────────────────────────────────────────
+async function loadKeys() {
+  const r = await api('GET', '/keys');
+  if (!r.success) return;
+  allKeys = r.keys;
+  renderKeys(allKeys);
+}
+
+function renderKeys(keys) {
+  const tbody = document.getElementById('keysBody');
+  if (!keys.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">No licenses yet. Generate one.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = keys.map(k => `
+    <tr>
+      <td class="mono" style="color:var(--accent)">${k.key_display}</td>
+      <td style="font-size:12px">${k.email}</td>
+      <td>${typeBadge(k.type, k.daysLeft, k.is_active)}</td>
+      <td style="text-align:center">${k.active_devices||0}/${k.max_devices} ${k.fail_count>2?'<span style="color:var(--err);font-size:10px">⚠'+k.fail_count+' fails</span>':''}</td>
+      <td>${k.is_active ? '<span style="color:var(--ok);font-size:11px">●&nbsp;Active</span>' : '<span style="color:var(--err);font-size:11px">●&nbsp;Revoked</span>'}</td>
+      <td style="font-size:11px;color:var(--muted)">${ts(k.issued_at)}</td>
+      <td><div class="actions">
+        <button class="btn btn-secondary btn-sm" onclick="lookupKey('${k.key_display}')">Detail</button>
+        <button class="btn btn-warn btn-sm" onclick="quickTransfer('${k.key_hash}')">Transfer</button>
+        ${k.is_active
+          ? `<button class="btn btn-danger btn-sm" onclick="quickRevoke('${k.key_hash}','${k.key_display}')">Revoke</button>`
+          : `<button class="btn btn-success btn-sm" onclick="quickRestore('${k.key_hash}')">Restore</button>`}
+      </div></td>
+    </tr>`).join('');
+}
+
+function filterKeys() {
+  const q  = document.getElementById('keySearch').value.toLowerCase();
+  const tp = document.getElementById('keyFilter').value;
+  renderKeys(allKeys.filter(k =>
+    (!q  || k.key_display.toLowerCase().includes(q) || k.email.toLowerCase().includes(q)) &&
+    (!tp || k.type === tp)
+  ));
+}
+
+async function quickRevoke(hash, display) {
+  if (!confirm('Revoke ' + display + '?')) return;
+  const r = await api('POST', '/keys/' + hash + '/revoke');
+  if (r.success) { showAlert('revokeAlert', '✅ Revoked', 'ok'); loadKeys(); loadDashboard(); }
+}
+
+async function quickRestore(hash) {
+  const r = await api('POST', '/keys/' + hash + '/restore');
+  if (r.success) { loadKeys(); loadDashboard(); }
+}
+
+async function quickTransfer(hash) {
+  if (!confirm('Remove all devices for this key?')) return;
+  const r = await api('POST', '/devices/' + hash + '/transfer-all');
+  if (r.success) { alert('✅ All devices freed. Customer can activate on new phone.'); loadKeys(); }
+}
+
+// ── Generate ───────────────────────────────────────────────────
+async function generateKey() {
+  const email   = document.getElementById('genEmail').value.trim();
+  const type    = document.getElementById('genType').value;
+  const devices = parseInt(document.getElementById('genDevices').value) || 1;
+  const notes   = document.getElementById('genNotes').value.trim();
+  if (!email) { showAlert('genAlert', 'Email is required', 'err'); return; }
+  const r = await api('POST', '/keys/generate', { email, type, maxDevices: devices, notes });
+  if (r.success) {
+    const out = document.getElementById('genKeyOut');
+    out.textContent = r.key; out.style.display = 'block';
+    document.getElementById('copyKey').value = r.key;
+    showAlert('genAlert', '✅ Key generated! Copy and send to customer.', 'ok');
+    loadDashboard(); loadKeys();
+  } else {
+    showAlert('genAlert', '❌ ' + r.error, 'err');
+  }
+}
+
+function copyToClipboard() {
+  const k = document.getElementById('copyKey').value;
+  if (!k) { showAlert('copyAlert', 'No key to copy', 'warn'); return; }
+  navigator.clipboard.writeText(k).then(() => showAlert('copyAlert', '✅ Copied to clipboard!', 'ok'));
+}
+
+function openWhatsApp() {
+  const k = document.getElementById('copyKey').value;
+  if (!k) { showAlert('copyAlert', 'No key to share', 'warn'); return; }
+  const msg = encodeURIComponent(`Your Smart Billing license key:\n\n${k}\n\nActivate: Open Smart Billing → Enter this key\nSupport: 9985223448`);
+  window.open('https://wa.me/?text=' + msg, '_blank');
+}
+
+// ── Verify & Manage ────────────────────────────────────────────
+async function verifyKey() {
+  const key = document.getElementById('verifyKey').value.trim();
+  if (!key) return;
+  const r = await api('POST', '/admin/verify', { licenseKey: key });
+  const div = document.getElementById('verifyResult');
+  if (r.success) {
+    div.innerHTML = `<div class="alert ok" style="display:block">
+      ✅ <strong>VALID ${r.type.toUpperCase()}</strong> | ${r.email}
+      ${r.daysLeft != null ? '| <strong>' + r.daysLeft + ' days left</strong>' : '| Never expires'}
+      | <strong>${r.deviceCount} device(s) active</strong>
+      ${r.devices?.map(d => `<br>&nbsp;&nbsp;📱 ${d.device_name||'Unknown'} — Last seen: ${ts(d.last_seen)}`).join('') || ''}
+    </div>`;
+  } else {
+    div.innerHTML = `<div class="alert err" style="display:block">❌ ${r.error}</div>`;
+  }
+}
+
+// Call admin/verify endpoint directly
+async function api_admin_verify(body) {
+  return fetch('/admin/verify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN },
+    body: JSON.stringify(body)
+  }).then(r => r.json());
+}
+
+// Override verifyKey to use correct endpoint
+window.verifyKey = async function() {
+  const key = document.getElementById('verifyKey').value.trim();
+  if (!key) return;
+  const r = await api_admin_verify({ licenseKey: key });
+  const div = document.getElementById('verifyResult');
+  if (r.success) {
+    div.innerHTML = `<div class="alert ok" style="display:block">
+      ✅ <strong>VALID ${r.type.toUpperCase()}</strong> | ${r.email}
+      ${r.daysLeft != null ? '| <strong>' + r.daysLeft + ' days left</strong>' : '| Never expires'}
+      | <strong>${r.deviceCount} device(s) active</strong>
+      ${r.devices?.map(d => `<br>&nbsp;&nbsp;📱 ${d.device_name||'Unknown'} — Last seen: ${ts(d.last_seen)}`).join('') || ''}
+    </div>`;
+  } else {
+    div.innerHTML = `<div class="alert err" style="display:block">❌ ${r.error}</div>`;
+  }
+};
+
+function lookupKey(key) {
+  document.getElementById('verifyKey').value = key;
+  showTab('verify');
+  verifyKey();
+}
+
+async function transferAll() {
+  const key = document.getElementById('transferKey').value.trim();
+  if (!key) { showAlert('transferAlert', 'Enter a key', 'warn'); return; }
+  const r = await api_admin_verify({ licenseKey: key });
+  if (!r.success) { showAlert('transferAlert', '❌ ' + r.error, 'err'); return; }
+  if (!confirm('Free ALL devices for ' + key + '?')) return;
+  const r2 = await fetch('/admin/devices/' + r.keyHash + '/transfer-all', {
+    method:'POST', headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'}
+  }).then(x => x.json());
+  if (r2.success) showAlert('transferAlert', '✅ All devices removed. Customer can activate on new device.', 'ok');
+  else showAlert('transferAlert', '❌ ' + r2.error, 'err');
+}
+
+async function revokeKey() {
+  const key = document.getElementById('revokeKey').value.trim();
+  if (!key) { showAlert('revokeAlert', 'Enter a key', 'warn'); return; }
+  const r = await api_admin_verify({ licenseKey: key });
+  if (!r.success) { showAlert('revokeAlert', '❌ ' + r.error, 'err'); return; }
+  if (!confirm('REVOKE license ' + key + '? All devices will be blocked.')) return;
+  const r2 = await fetch('/admin/keys/' + hashFromDisplay(key) + '/revoke', {
+    method:'POST', headers:{'Authorization':'Bearer '+TOKEN}
+  }).then(x => x.json());
+  if (r2.success) { showAlert('revokeAlert', '✅ License revoked.', 'ok'); loadKeys(); }
+  else showAlert('revokeAlert', '❌ ' + r2.error, 'err');
+}
+
+async function restoreKey() {
+  const key = document.getElementById('revokeKey').value.trim();
+  if (!key) { showAlert('revokeAlert', 'Enter a key', 'warn'); return; }
+  const r = await api_admin_verify({ licenseKey: key });
+  if (!r.success) { showAlert('revokeAlert', '❌ ' + r.error, 'err'); return; }
+  const r2 = await fetch('/admin/keys/' + hashFromDisplay(key) + '/restore', {
+    method:'POST', headers:{'Authorization':'Bearer '+TOKEN}
+  }).then(x => x.json());
+  if (r2.success) { showAlert('revokeAlert', '✅ License restored.', 'ok'); loadKeys(); }
+}
+
+function hashFromDisplay(key) {
+  // Find hash from loaded keys
+  const k = allKeys.find(k => k.key_display === key.toUpperCase());
+  return k ? k.key_hash : '';
+}
+
+// ── Suspicious ─────────────────────────────────────────────────
+async function loadSuspicious() {
+  const r = await api('GET', '/suspicious');
+  const tbody = document.getElementById('suspiciousBody');
+  if (!r.success || !r.suspicious.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--ok)">✅ No suspicious activity detected.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = r.suspicious.map(s => `
+    <tr>
+      <td class="mono" style="color:var(--warn)">${s.key_display||'Unknown'}</td>
+      <td>${s.email||'—'}</td>
+      <td>${typeBadge(s.type, null, true)}</td>
+      <td style="color:var(--err);font-weight:700">${s.fail_count}</td>
+      <td style="font-size:11px;color:var(--muted)">${(s.ips||'').split(',').slice(0,3).join(', ')}</td>
+      <td style="font-size:11px">${ts(s.last_attempt)}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="quickRevoke('${s.key_hash}','${s.key_display}')">Revoke</button></td>
+    </tr>`).join('');
+}
+
+// ── Logs ───────────────────────────────────────────────────────
+async function loadLogs() {
+  const filter = document.getElementById('logFilter').value;
+  const r = await api('GET', '/logs' + (filter ? '?action=' + filter : ''));
+  const tbody = document.getElementById('logsBody');
+  if (!r.success || !r.logs.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">No logs yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = r.logs.map(l => `
+    <tr>
+      <td style="font-size:11px;white-space:nowrap">${ts(l.ts)}</td>
+      <td><span style="font-size:11px;font-weight:600">${l.action}</span></td>
+      <td class="${l.result.startsWith('ok')?'result-ok':'result-fail'}" style="font-size:11px;font-weight:700">${l.result}</td>
+      <td class="mono" style="font-size:10px;color:var(--muted)">${(l.key_hash||'').substring(0,16)}...</td>
+      <td style="font-size:11px">${l.device_id||'—'}</td>
+      <td style="font-size:11px;color:var(--muted)">${l.ip||'—'}</td>
+      <td style="font-size:11px;color:var(--muted)">${l.detail||'—'}</td>
+    </tr>`).join('');
+}
+
+// ── Export ─────────────────────────────────────────────────────
+function exportData() {
+  window.open('/admin/export?token=' + TOKEN, '_blank');
+}
+
+// ── Init ───────────────────────────────────────────────────────
+if (!TOKEN) {
+  document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:16px">
+    <div style="font-size:48px">🔑</div>
+    <div style="font-size:20px;font-weight:700">Admin Access Required</div>
+    <div style="font-size:14px;color:var(--muted)">Add ?token=YOUR_API_SECRET to the URL</div>
+    <div style="font-size:12px;color:var(--muted)">Example: http://localhost:3000/?token=cs_admin_2024_secure</div>
+  </div>`;
+} else {
+  loadDashboard();
+  loadKeys();
+  setInterval(loadDashboard, 30000); // refresh stats every 30s
+}
+</script>
+</body>
+</html>
