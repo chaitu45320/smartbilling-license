@@ -4,24 +4,22 @@
   "description": "Smart Billing Online License Server — Cloud Sprint",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node index.js",
-    "generate": "node generate-keys.js",
-    "list-keys": "node generate-keys.js list",
+    "start":       "node index.js",
+    "dev":         "node index.js",
+    "generate":    "node generate-keys.js",
+    "list-keys":   "node generate-keys.js list",
     "export-keys": "node generate-keys.js export"
   },
   "dependencies": {
-    "dotenv": "^16.4.5",
-    "express": "^4.21.2",
+    "dotenv":             "^16.4.5",
+    "express":            "^4.21.2",
     "express-rate-limit": "^7.4.1",
-    "helmet": "^8.0.0",
-    "jsonwebtoken": "^9.0.2",
-    "sql.js": "^1.12.0",
-    "uuid": "^14.0.0"
+    "helmet":             "^8.0.0",
+    "jsonwebtoken":       "^9.0.2",
+    "sql.js":             "^1.12.0",
+    "uuid":               "^11.0.3"
   },
-  "engines": {
-    "node": ">=16"
-  },
+  "engines": { "node": ">=16" },
   "author": "Cloud Sprint <contact@cloudsprint.in>",
   "license": "UNLICENSED"
 }

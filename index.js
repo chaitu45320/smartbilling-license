@@ -14,8 +14,9 @@ const rateLimit  = require('express-rate-limit');
 const path       = require('path');
 const db         = require('./models/db');
 
-const app  = express();
+// Railway sets PORT automatically — never hardcode it
 const PORT = process.env.PORT || 3000;
+const app  = express();
 
 // ── Security Headers ────────────────────────────────────────────
 app.use(helmet({
@@ -132,21 +133,10 @@ app.use((err, req, res, next) => {
 // ── Start ─────────────────────────────────────────────────────────
 db.init().then(() => {
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`
-╔══════════════════════════════════════════════════════╗
-║   Smart Billing License Server v2.0                  ║
-║   Cloud Sprint | contact@cloudsprint.in              ║
-╠══════════════════════════════════════════════════════╣
-║   Port      : ${String(PORT).padEnd(36)}║
-║   Local     : http://localhost:${PORT}                ║
-║   Network   : http://192.168.0.106:${PORT}            ║
-║   Health    : http://localhost:${PORT}/health         ║
-║   Dashboard : http://localhost:${PORT}/?token=...     ║
-╚══════════════════════════════════════════════════════╝
-`);
+    console.log(`[SmartBilling License Server] Running on port ${PORT}`);
+    console.log(`[Health] http://localhost:${PORT}/health`);
     const secret = process.env.API_SECRET || 'cs_admin_2024_secure';
-    console.log(`  Admin URL : http://localhost:${PORT}/?token=${secret}`);
-    console.log(`  Phone URL : http://192.168.0.106:${PORT}/health\n`);
+    console.log(`[Admin]  http://localhost:${PORT}/?token=${secret}`);
   });
 }).catch(err => {
   console.error('[FATAL] DB init failed:', err.message);
