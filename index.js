@@ -28,7 +28,7 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false }));
 
 // ── Trust proxy (for Railway/Render) ───────────────────────────
-app.set('trust proxy', false); // set to false for local PC use
+app.set('trust proxy', 1); // required for Render/Railway reverse proxy
 
 // ── Request logger ────────────────────────────────────────────
 app.use((req, res, next) => {
@@ -98,6 +98,7 @@ app.use('/admin',  adminRoutes);
 
 // ── Static files ─────────────────────────────────────────────
 app.use('/public', express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ── Test page (open from phone browser to check connectivity) ─
 app.get('/test', (req, res) => {
@@ -308,12 +309,29 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, error: 'Internal server error' });
 });
 
+
+// ── Keep-alive ping (prevents Render free tier from spinning down) ─
+// Pings self every 14 minutes — Render spins down after 15 min of inactivity
+function startKeepAlive() {
+  const url = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+  setInterval(() => {
+    const mod = url.startsWith('https') ? require('https') : require('http');
+    const req = mod.get(url + '/health', (res) => {
+      res.resume();
+      console.log(`[KeepAlive] Ping OK — ${new Date().toISOString()}`);
+    });
+    req.on('error', (e) => console.warn('[KeepAlive] Ping failed:', e.message));
+    req.end();
+  }, 14 * 60 * 1000); // every 14 minutes
+}
+
 // ── Start ─────────────────────────────────────────────────────────
 db.init().then(() => {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`[SmartBilling License Server] Running on port ${PORT}`);
     console.log(`[Health] http://localhost:${PORT}/health`);
     console.log(`[Admin]  http://localhost:${PORT}/`);
+    startKeepAlive();
   });
 }).catch(err => {
   console.error('[FATAL] DB init failed:', err.message);

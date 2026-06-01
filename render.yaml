@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: smartbilling-license
+    runtime: node
+    buildCommand: npm install
+    startCommand: node index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: API_SECRET
+        generateValue: false
+        value: cs_admin_2024_secure
+      - key: ADMIN_USERNAME
+        value: CloudSprint
+      - key: ADMIN_PASSWORD
+        value: CloudSprint_Admin_2024_Secure
+      - key: LICENSE_SECRET
+        value: SB@CloudSprint#2024!SmartBilling$Key@Secure99
+      - key: JWT_SECRET
+        value: SB_JWT_CloudSprint_2024_Ultra_Secure_Key_99
+      - key: MAX_DEVICES
+        value: "1"
