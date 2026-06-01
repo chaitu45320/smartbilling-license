@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' https://smartbilling-license.onrender.com https://*.onrender.com https://*.railway.app https://*.up.railway.app;"/>
+  <title>Smart Billing — Activate</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #F0F2F5;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      min-height: 100vh; color: #1a1a2e;
+      -webkit-app-region: drag; user-select: none;
+    }
+    .card {
+      background: #fff; border-radius: 16px;
+      box-shadow: 0 4px 32px rgba(0,0,0,.10);
+      padding: 36px 36px 28px; width: 500px;
+      -webkit-app-region: no-drag;
+    }
+    .logo-row { display:flex; align-items:center; gap:12px; margin-bottom:4px; }
+    .logo-icon {
+      width:42px; height:42px; background:#185FA5; border-radius:10px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:14px; font-weight:800; color:#fff; letter-spacing:-.5px;
+    }
+    .app-name    { font-size:21px; font-weight:700; color:#1a1a2e; }
+    .app-tagline { font-size:12px; color:#6b7280; margin-bottom:22px; margin-top:2px; }
+    .banner {
+      display:none; padding:10px 14px; border-radius:8px;
+      font-size:13px; margin-bottom:16px; line-height:1.5;
+    }
+    .banner.error   { display:block; background:#fff1f0; color:#c0392b; border-left:3px solid #e74c3c; }
+    .banner.warning { display:block; background:#fffbec; color:#92610a; border-left:3px solid #f59e0b; }
+    label {
+      display:block; font-size:11px; font-weight:700; color:#374151;
+      margin-bottom:5px; letter-spacing:.08em; text-transform:uppercase;
+    }
+    .field { margin-bottom:16px; }
+    input[type="text"], input[type="email"] {
+      width:100%; padding:11px 13px;
+      border:1.5px solid #d1d5db; border-radius:9px;
+      font-size:13px; background:#f9fafb; color:#1a1a2e;
+      outline:none; transition:border-color .15s, background .15s;
+    }
+    input[type="text"]:focus, input[type="email"]:focus {
+      border-color:#185FA5; background:#fff;
+      box-shadow:0 0 0 3px rgba(24,95,165,.10);
+    }
+    input.invalid { border-color:#e74c3c !important; }
+    input.valid   { border-color:#10b981 !important; }
+    /* Key segments row */
+    .key-wrap { display:flex; align-items:center; gap:5px; }
+    .key-prefix {
+      font-family:'Courier New',monospace; font-size:12px; font-weight:700;
+      color:#374151; background:#f3f4f6; border:1.5px solid #d1d5db;
+      border-radius:8px; padding:10px 9px; white-space:nowrap;
+    }
+    .key-sep { font-size:16px; color:#9ca3af; }
+    .key-seg {
+      width:74px !important; padding:10px 6px !important;
+      text-align:center; font-family:'Courier New',monospace !important;
+      font-size:14px !important; letter-spacing:.12em;
+      text-transform:uppercase;
+    }
+    .type-row { display:flex; gap:8px; margin-bottom:16px; }
+    .type-btn {
+      flex:1; padding:9px; border-radius:8px;
+      border:1.5px solid #d1d5db; background:#f9fafb;
+      font-size:13px; font-weight:600; cursor:pointer; color:#374151;
+      transition:all .15s;
+    }
+    .type-btn.active { border-color:#185FA5; background:#EBF3FB; color:#185FA5; }
+    .type-btn:hover:not(.active) { background:#f3f4f6; }
+    .hint { font-size:11px; color:#9ca3af; margin-top:5px; }
+    .fmt-hint {
+      font-size:11px; color:#6b7280; margin-bottom:16px;
+      background:#f9fafb; border-radius:6px; padding:7px 11px;
+      border:1px solid #e5e7eb; font-family:'Courier New',monospace;
+    }
+    .btn {
+      width:100%; padding:13px; background:#185FA5; color:#fff;
+      border:none; border-radius:9px; font-size:15px; font-weight:600;
+      cursor:pointer; transition:background .15s, transform .08s, opacity .15s;
+    }
+    .btn:hover    { background:#0C447C; }
+    .btn:active   { transform:scale(.98); }
+    .btn:disabled { opacity:.55; cursor:not-allowed; transform:none; }
+    .status {
+      display:none; margin-top:14px; padding:10px 14px;
+      border-radius:8px; font-size:13px; line-height:1.6;
+    }
+    .status.error   { display:block; background:#fff1f0; color:#c0392b; border:1px solid #fcc; }
+    .status.success { display:block; background:#f0fdf4; color:#166534; border:1px solid #bbf7d0; }
+    .status.trial   { display:block; background:#fffbec; color:#92610a; border:1px solid #fed7aa; }
+    .status.loading { display:block; background:#f0f4ff; color:#3730a3; border:1px solid #c7d2fe; }
+    .divider { height:1px; background:#f3f4f6; margin:20px 0 14px; }
+    .footer  { font-size:12px; color:#9ca3af; text-align:center; }
+    .spinner {
+      display:inline-block; width:14px; height:14px;
+      border:2px solid rgba(24,95,165,.3); border-top-color:#185FA5;
+      border-radius:50%; animation:spin .7s linear infinite;
+      vertical-align:middle; margin-right:6px;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo-row">
+    <div class="logo-icon">SB</div>
+    <span class="app-name">Smart Billing</span>
+  </div>
+  <p class="app-tagline">Enter your details below to activate the application</p>
+
+  <div class="banner" id="top-banner"></div>
+
+  <div class="field">
+    <label>License Type</label>
+    <div class="type-row">
+      <button class="type-btn active" id="btn-full"  onclick="setType('full')">Full License</button>
+      <button class="type-btn"        id="btn-trial" onclick="setType('trial')">Trial (10 days)</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="email-input">Your Email Address</label>
+    <input type="email" id="email-input" placeholder="you@example.com" autocomplete="email" spellcheck="false"/>
+    <p class="hint">Used to identify your license</p>
+  </div>
+
+  <div class="field">
+    <label>License Key</label>
+    <div class="key-wrap">
+      <div class="key-prefix" id="prefix-display">SMBILL-FULL</div>
+      <span class="key-sep">-</span>
+      <input type="text" class="key-seg" id="seg1" maxlength="6" placeholder="XXXXXX" autocomplete="off" spellcheck="false"/>
+      <span class="key-sep">-</span>
+      <input type="text" class="key-seg" id="seg2" maxlength="6" placeholder="XXXXXX" autocomplete="off" spellcheck="false"/>
+      <span class="key-sep">-</span>
+      <input type="text" class="key-seg" id="seg3" maxlength="6" placeholder="XXXXXX" autocomplete="off" spellcheck="false"/>
+    </div>
+    <p class="hint">Key provided by your administrator after installation</p>
+  </div>
+
+  <div class="fmt-hint" id="fmt-hint">Format: SMBILL-FULL-XXXXXX-XXXXXX-XXXXXX</div>
+
+  <button class="btn" id="activate-btn" onclick="handleActivate()">Activate Smart Billing</button>
+  <div class="status" id="status-box"></div>
+
+  <div class="divider"></div>
+  <p class="footer">No key yet? Install first, then contact your administrator for a key.</p>
+</div>
+
+<script>
+  const btn    = document.getElementById('activate-btn');
+  const status = document.getElementById('status-box');
+  const banner = document.getElementById('top-banner');
+  const emailEl= document.getElementById('email-input');
+  const segs   = ['seg1','seg2','seg3'].map(id => document.getElementById(id));
+  let licType  = 'full';
+
+  function setType(type) {
+    licType = type;
+    document.getElementById('btn-full').classList.toggle('active', type === 'full');
+    document.getElementById('btn-trial').classList.toggle('active', type === 'trial');
+    const prefix = type === 'full' ? 'SMBILL-FULL' : 'SMBILL-TRAL';
+    document.getElementById('prefix-display').textContent = prefix;
+    document.getElementById('fmt-hint').textContent = `Format: ${prefix}-XXXXXX-XXXXXX-XXXXXX`;
+    clearStatus();
+  }
+
+  // Auto-uppercase segments, auto-advance
+  segs.forEach((seg, idx) => {
+    seg.addEventListener('input', () => {
+      seg.value = seg.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      seg.classList.remove('invalid', 'valid');
+      clearStatus();
+      if (seg.value.length === 6 && idx < 2) segs[idx + 1].focus();
+    });
+    seg.addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleActivate();
+      if (e.key === 'Backspace' && seg.value === '' && idx > 0) segs[idx - 1].focus();
+    });
+    seg.addEventListener('paste', e => {
+      e.preventDefault();
+      const text = (e.clipboardData.getData('text') || '').toUpperCase().trim();
+      distributePaste(text);
+    });
+  });
+
+  emailEl.addEventListener('keydown', e => { if (e.key === 'Enter') segs[0].focus(); });
+
+  function distributePaste(text) {
+    // Auto-detect type from pasted full key
+    if (/^SMBILL-TRAL-/i.test(text)) setType('trial');
+    else if (/^SMBILL-FULL-/i.test(text)) setType('full');
+    const stripped = text.replace(/^SMBILL-(FULL|TRAL)-/i, '').replace(/[^A-Z0-9]/g, '');
+    segs[0].value = stripped.substring(0, 6);
+    segs[1].value = stripped.substring(6, 12);
+    segs[2].value = stripped.substring(12, 18);
+    clearStatus();
+    segs[2].focus();
+  }
+
+  if (window.licenseAPI?.onActivationError) {
+    window.licenseAPI.onActivationError(msg => {
+      banner.textContent = msg;
+      banner.className   = 'banner error';
+    });
+  }
+
+  async function handleActivate() {
+    const email = emailEl.value.trim();
+    const s1 = segs[0].value.trim();
+    const s2 = segs[1].value.trim();
+    const s3 = segs[2].value.trim();
+
+    // Validate email
+    if (!email || !email.includes('@')) {
+      emailEl.classList.add('invalid');
+      showStatus('Please enter a valid email address.', 'error');
+      emailEl.focus(); return;
+    }
+    // Validate segments
+    if (!s1 || !s2 || !s3) {
+      showStatus('Please enter all three key segments.', 'error');
+      segs.find(s => !s.value)?.focus(); return;
+    }
+    if (s1.length !== 6 || s2.length !== 6 || s3.length !== 6) {
+      segs.forEach(s => { if (s.value.length !== 6) s.classList.add('invalid'); });
+      showStatus('Each key segment must be exactly 6 characters.', 'error'); return;
+    }
+
+    const typeCode = licType === 'full' ? 'FULL' : 'TRAL';
+    const fullKey  = `SMBILL-${typeCode}-${s1}-${s2}-${s3}`;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Validating…';
+    showStatus('Validating your license key…', 'loading');
+
+    try {
+      const result = await window.licenseAPI.activate(fullKey, email);
+      btn.disabled = false;
+      btn.textContent = 'Activate Smart Billing';
+
+      if (result.valid) {
+        segs.forEach(s => s.classList.add('valid'));
+        emailEl.classList.add('valid');
+        if (result.type === 'full') {
+          showStatus(`✓ Full license activated! Launching Smart Billing…`, 'success');
+        } else {
+          showStatus(`✓ Trial activated! ${result.daysLeft} day(s) remaining. Launching…`, 'trial');
+        }
+      } else {
+        segs.forEach(s => s.classList.add('invalid'));
+        showStatus('✗ ' + (result.reason || 'Invalid key. Please check and try again.'), 'error');
+        segs[0].focus();
+      }
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Activate Smart Billing';
+      showStatus('✗ Error: ' + err.message, 'error');
+    }
+  }
+
+  function showStatus(msg, type) { status.textContent = msg; status.className = 'status ' + type; }
+  function clearStatus()         { status.textContent = ''; status.className = 'status'; }
+
+  window.addEventListener('load', () => emailEl.focus());
+</script>
+</body>
+</html>
